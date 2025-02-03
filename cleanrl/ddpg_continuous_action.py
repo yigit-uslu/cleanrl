@@ -6,6 +6,10 @@ from dataclasses import dataclass
 
 import gymnasium as gym
 import numpy as np
+
+import numpy as np
+print(np.__version__)
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,6 +17,7 @@ import torch.optim as optim
 import tyro
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
+# from gym.wrappers import RecordVideo
 
 
 @dataclass
@@ -31,7 +36,7 @@ class Args:
     """the wandb's project name"""
     wandb_entity: str = None
     """the entity (team) of wandb's project"""
-    capture_video: bool = False
+    capture_video: bool = True
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     save_model: bool = False
     """whether to save model into the `runs/{run_name}` folder"""
@@ -63,6 +68,7 @@ class Args:
     """the frequency of training policy (delayed)"""
     noise_clip: float = 0.5
     """noise clip parameter of the Target Policy Smoothing Regularization"""
+
 
 
 def make_env(env_id, seed, idx, capture_video, run_name):

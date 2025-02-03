@@ -30,7 +30,7 @@ class Args:
     """the wandb's project name"""
     wandb_entity: str = None
     """the entity (team) of wandb's project"""
-    capture_video: bool = False
+    capture_video: bool = True
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
     # Algorithm specific arguments
@@ -198,12 +198,16 @@ if __name__ == "__main__":
             with torch.no_grad():
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
+                
             actions[step] = action
             logprobs[step] = logprob
 
+            # print(f"Step = {step}\tAction space dtype, shape = ", envs.action_space.dtype, envs.action_space.shape)
+
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, terminations, truncations, infos = envs.step(action.cpu().numpy())
+            next_obs, reward, terminations, truncations, infos = envs.step(action.cpu().numpy().astype(np.int64))
             next_done = np.logical_or(terminations, truncations)
+            next_done = next_done.astype(np.int64)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
 
@@ -247,6 +251,20 @@ if __name__ == "__main__":
                 end = start + args.minibatch_size
                 mb_inds = b_inds[start:end]
 
+                # # Cast int64 to int32
+                # mb_inds = mb_inds.astype(int)  # Ensure it's a NumPy array
+                # mb_inds = torch.from_numpy(mb_inds).to(dtype=torch.int32, device=b_obs.device)
+
+                # # mb_inds = torch.from_numpy(mb_inds).to(dtype = torch.int32, device=b_obs.device)
+                # print("b_obs[mb_inds]: ",b_obs[mb_inds])
+                # print("b_actions[mb_inds]: ",b_actions[mb_inds])
+                # print("b_actions.int()[mb_inds]: ",b_actions.int()[mb_inds])
+
+                # print(type(mb_inds))
+                mb_inds = mb_inds.tolist()
+                mb_inds = torch.LongTensor(mb_inds).to(device=b_obs.device)
+
+                # _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])
                 _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
